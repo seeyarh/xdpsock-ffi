@@ -1,4 +1,4 @@
-use xsk_rs::{
+use xdpsock::{
     socket::{BindFlags, SocketConfig, SocketConfigBuilder, XdpFlags},
     umem::{UmemConfig, UmemConfigBuilder},
     xsk::Xsk2,

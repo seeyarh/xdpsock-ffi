@@ -1,5 +1,5 @@
 [package]
-name = "xsk-rs-ffi"
+name = "xdpsock-ffi"
 version = "0.1.0"
 authors = ["Collins Huff <collinsrhuffiii@gmail.com>"]
 edition = "2018"
@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-xsk-rs = { path = "../xsk-rs"}
+xdpsock = "0.1.0"
 libc = "0.2"
 
 [lib]

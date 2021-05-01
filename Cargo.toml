@@ -3,6 +3,12 @@ name = "xdpsock-ffi"
 version = "0.1.0"
 authors = ["Collins Huff <collinsrhuffiii@gmail.com>"]
 edition = "2018"
+description = "C FFI for xdpsock"
+license = "MIT"
+repository = "https://github.com/seeyarh/xdpsock-ffi"
+readme = "README.md"
+keywords = ["AF_XDP", "XSK", "eBPF", "XDP"]
+categories = ["os::unix-apis", "external-ffi-bindings"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,6 +1,6 @@
 use xdpsock::{
-    socket::{BindFlags, SocketConfig, SocketConfigBuilder, XdpFlags},
-    umem::{UmemConfig, UmemConfigBuilder},
+    socket::{BindFlags, SocketConfigBuilder, XdpFlags},
+    umem::UmemConfigBuilder,
     xsk::Xsk2,
 };
 
@@ -9,8 +9,8 @@ use std::ffi::CStr;
 use std::slice;
 
 #[no_mangle]
-pub extern "C" fn xsk_new<'a>(ifname: *const c_char) -> *mut Xsk2<'a> {
-    let ifname = unsafe {
+pub unsafe extern "C" fn xsk_new(ifname: *const c_char) -> *mut Xsk2 {
+    let ifname = {
         assert!(!ifname.is_null());
         CStr::from_ptr(ifname)
     };
@@ -34,55 +34,56 @@ pub extern "C" fn xsk_new<'a>(ifname: *const c_char) -> *mut Xsk2<'a> {
 
     let n_tx_frames = umem_config.frame_count() / 2;
 
-    let mut xsk = Xsk2::new(&ifname, 0, umem_config, socket_config, n_tx_frames as usize);
+    let n_tx_batch_size = 1024;
+
+    let xsk = Xsk2::new(
+        &ifname,
+        0,
+        umem_config,
+        socket_config,
+        n_tx_frames as usize,
+        n_tx_batch_size,
+    )
+    .expect("failed to build xsk");
     Box::into_raw(Box::new(xsk))
 }
 
 #[no_mangle]
-pub extern "C" fn xsk_delete(xsk_ptr: *mut Xsk2) {
-    let xsk = unsafe {
+pub unsafe extern "C" fn xsk_delete(xsk_ptr: *mut Xsk2) {
+    let _xsk = {
         assert!(!xsk_ptr.is_null());
         &mut *xsk_ptr
     };
 
-    let tx_stats = xsk.shutdown_tx().expect("failed to shutdown tx");
-    let rx_stats = xsk.shutdown_rx().expect("failed to shut down rx");
-    eprintln!("tx_stats = {:?}", tx_stats);
-    eprintln!("tx duration = {:?}", tx_stats.duration());
-    eprintln!("tx pps = {:?}", tx_stats.pps());
-    eprintln!("rx_stats = {:?}", rx_stats);
-    unsafe {
-        Box::from_raw(xsk_ptr);
-    }
+    Box::from_raw(xsk_ptr);
 }
 
 #[no_mangle]
-pub extern "C" fn xsk_send(xsk_ptr: *mut Xsk2, pkt: *const u8, len: size_t) {
-    let xsk = unsafe {
+pub unsafe extern "C" fn xsk_send(xsk_ptr: *mut Xsk2, pkt: *const u8, len: size_t) {
+    let xsk = {
         assert!(!xsk_ptr.is_null());
         &mut *xsk_ptr
     };
 
-    let pkt = unsafe {
+    let pkt = {
         assert!(!pkt.is_null());
         slice::from_raw_parts(pkt, len as usize)
     };
 
-    xsk.send(&pkt);
+    xsk.tx.send(&pkt).expect("failed to send pkt");
 }
 
 #[no_mangle]
-pub extern "C" fn xsk_recv(xsk_ptr: *mut Xsk2, pkt: *mut u8, len: size_t) {
-    let xsk = unsafe {
+pub unsafe extern "C" fn xsk_recv(xsk_ptr: *mut Xsk2, pkt: *mut u8, len: size_t) -> u16 {
+    let xsk = {
         assert!(!xsk_ptr.is_null());
         &mut *xsk_ptr
     };
 
-    let mut pkt = unsafe {
+    let pkt = {
         assert!(!pkt.is_null());
         slice::from_raw_parts_mut(pkt, len as usize)
     };
 
-    let (recvd_pkt, len) = xsk.recv().expect("failed to recv");
-    pkt[..len].clone_from_slice(&recvd_pkt[..len]);
+    xsk.rx.recv(pkt) as u16
 }

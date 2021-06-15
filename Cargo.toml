@@ -13,7 +13,7 @@ categories = ["os::unix-apis", "external-ffi-bindings"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-xdpsock = "0.1.0"
+xdpsock = { git = "https://github.com/seeyarh/xdpsock" }
 libc = "0.2"
 
 [lib]
